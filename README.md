@@ -18,11 +18,11 @@ An in-depth tutorial on how to build the robot is available in [linorobot2_hardw
 This package requires ros-foxy or ros-galactic. If you haven't installed ROS2 yet, you can use this [installer](https://github.com/linorobot/ros2me) script that has been tested to work on x86 and ARM based dev boards ie. Raspberry Pi4/Nvidia Jetson Series. 
 
 ### 1. Robot Computer - linorobot2 Package
-The easiest way to install this package on the robot computer is to run the bash script found in this package's root directory. It will install all the dependencies, set the ENV variables for the robot base and sensors, and create a linorobot2_ws (robot_computer_ws) on the robot computer's `$HOME` directory. If you're using a ZED camera with a Jetson Nano, you must create a custom Ubuntu 20.04 image for CUDA and the GPU driver to work. Here's a quick [guide](https://github.com/linorobot/linorobot2/blob/master/ROBOT_INSTALLATION.md#1-creating-jetson-nano-image) on how to create a custom image for Jetson Nano.
+The easiest way to install this package on the robot computer is to run the bash script found in this package's root directory. It will install all the dependencies, set the ENV variables for the robot base and sensors, and create a linorobot2_ws (robot_computer_ws) on the robot computer's `$HOME` directory. If you're using a ZED camera with a Jetson Nano, you must create a custom Ubuntu 20.04 image for CUDA and the GPU driver to work. Here's a quick [guide](./ROBOT_INSTALLATION.md#1-creating-jetson-nano-image) on how to create a custom image for Jetson Nano.
 
     source /opt/ros/<ros_distro>/setup.bash
     cd /tmp
-    wget https://raw.githubusercontent.com/linorobot/linorobot2/master/install_linorobot2.bash
+    wget https://raw.githubusercontent.com/linorobot/linorobot2/${ROS_DISTRO}/install_linorobot2.bash
     bash install_linorobot2.bash <robot_type> <laser_sensor> <depth_sensor>
     source ~/.bashrc
 
@@ -35,6 +35,7 @@ laser_sensor:
 - `rplidar` - [RP LIDAR A1](https://www.slamtec.com/en/Lidar/A1)
 - `ldlidar` - [LD06 LIDAR](https://www.inno-maker.com/product/lidar-ld06/)
 - `ydlidar` - [YDLIDAR](https://www.ydlidar.com/lidars.html)
+- `xv11` - [XV11](http://xv11hacking.rohbotics.com/mainSpace/home.html)
 - `realsense` - * [Intel RealSense](https://www.intelrealsense.com/stereo-depth/) D435, D435i
 - `zed` - * [Zed](https://www.stereolabs.com/zed)
 - `zed2` - * [Zed 2](https://www.stereolabs.com/zed-2)
@@ -52,7 +53,7 @@ depth_sensor:
 - `zedm` - [Zed Mini](https://www.stereolabs.com/zed-mini)
 
 
-Alternatively, follow this [guide](https://github.com/linorobot/linorobot2/blob/master/ROBOT_INSTALLATION.md) to do the installation manually.
+Alternatively, follow this [guide](./ROBOT_INSTALLATION.md) to do the installation manually.
 
 ### 2. Host Machine / Development Computer - Gazebo Simulation (Optional)
 This step is only required if you plan to use Gazebo later. This comes in handy if you want to fine-tune parameters (ie. SLAM Toolbox, AMCL, Nav2) or test your applications on a virtual robot. 
@@ -61,7 +62,7 @@ This step is only required if you plan to use Gazebo later. This comes in handy 
 Install linorobot2 package on the host machine:
 
     cd <host_machine_ws>
-    git clone https://github.com/linorobot/linorobot2 src/linorobot2
+    git clone -b $ROS_DISTRO https://github.com/linorobot/linorobot2 src/linorobot2
     rosdep update && rosdep install --from-path src --ignore-src -y --skip-keys microxrcedds_agent --skip-keys micro_ros_agent
     colcon build
     source install/setup.bash
@@ -85,14 +86,14 @@ Install [linorobot2_viz](https://github.com/linorobot/linorobot2_viz) package to
     colcon build
     source install/setup.bash
 
-## Hardware
-All the hardware documentation to build the robot can be found [here](https://github.com/linorobot/linorobot2_hardware).
+## Hardware and Robot Firmware
+All the hardware documentation and robot microcontroller's firmware can be found [here](https://github.com/linorobot/linorobot2_hardware).
 
 ## URDF
 ### 1. Define robot properties
-[linorobot2_description](https://github.com/linorobot/linorobot2/tree/master/linorobot2_description) package has parameterized xacro files that can help you kickstart writing the robot's URDF. Open <robot_type>.properties.urdf.xacro in [linorobot2_description/urdf](https://github.com/linorobot/linorobot2/tree/master/linorobot2_description/urdf) directory and change the values according to the robot's specification/dimensions. All pose definitions must be measured from the `base_link` (center of base) and wheel positions (ie `wheel_pos_x`) are referring to wheel 1.
+[linorobot2_description](./linorobot2_description) package has parameterized xacro files that can help you kickstart writing the robot's URDF. Open <robot_type>.properties.urdf.xacro in [linorobot2_description/urdf](./linorobot2_description/urdf) directory and change the values according to the robot's specification/dimensions. All pose definitions must be measured from the `base_link` (center of base) and wheel positions (ie `wheel_pos_x`) are referring to wheel 1.
 
-For custom URDFs, you can change the `urdf_path` in [description.launch.py](https://github.com/linorobot/linorobot2/blob/master/linorobot2_description/launch/description.launch.py) found in linorobot2_description/launch directory. 
+For custom URDFs, you can change the `urdf_path` in [description.launch.py](./linorobot2_description/launch/description.launch.py) found in linorobot2_description/launch directory. 
 
 Robot Orientation:
 
@@ -115,16 +116,16 @@ The same changes must be made on the host machine's <robot_type>.properties.urdf
     colcon build
 
 ### 2. Visualize the newly created URDF
-Robot Computer:
+#### 2.1 Publish the URDF from the robot computer:
 
     ros2 launch linorobot2_description description.launch.py
 
 Optional parameters for simulation on host machine:
 - **rviz** - Set to true to visualize the robot in rviz2 and only if you're configuring the URDF from the host machine. For example:
 
-        ros2 launch linorobo2_description description.launch.py rviz:=true
+        ros2 launch linorobot2_description description.launch.py rviz:=true
 
-Host Machine:
+#### 2.2 Visualize the robot from the host machine:
 
 The `rviz` argument on description.launch.py won't work on headless setup but you can visualize the robot remotely from the host machine:
 
@@ -156,7 +157,7 @@ The agent needs a few seconds to get reconnected (less than 30 seconds). Unplug 
 
 #### 1.1b Using Gazebo:
     
-    ros2 launch linorobot2_bringup gazebo.launch.py
+    ros2 launch linorobot2_gazebo gazebo.launch.py
 
 linorobot2_bringup.launch.py or gazebo.launch.py must always be run on a separate terminal before creating a map or robot navigation when working on a real robot or gazebo simulation respectively.
 
@@ -222,7 +223,7 @@ More info [here](https://navigation.ros.org/tutorials/docs/navigation2_with_slam
 #### 3.3 Save the map
 
     cd linorobot2/linorobot2_navigation/maps
-    ros2 run nav2_map_server map_saver_cli -f <map_name> --ros-args -p save_map_timeout:=10000
+    ros2 run nav2_map_server map_saver_cli -f <map_name> --ros-args -p save_map_timeout:=10000.
 
 ### 4. Autonomous Navigation
 
@@ -256,6 +257,9 @@ The `rviz` argument for navigation.launch.py won't work on headless setup but yo
 
 Check out Nav2 [tutorial](https://navigation.ros.org/tutorials/docs/navigation2_on_real_turtlebot3.html#initialize-the-location-of-turtlebot-3) for more details on how to initialize and send goal pose. 
 
+navigation.launch.py will continue to throw this error `Timed out waiting for transform from base_link to map to become available, tf error: Invalid frame ID "map" passed to canTransform argument target_frame - frame does not exist` until the robot's pose has been initialized.
+
+
 ## Troubleshooting Guide
 
 #### 1. The changes I made on a file are not taking effect on the package configuration/robot's behavior.
@@ -273,6 +277,13 @@ Check out Nav2 [tutorial](https://navigation.ros.org/tutorials/docs/navigation2_
 
 #### 3. `target_frame - frame does not exist`
 - Check your <robot_type>.properties.urdf.xacro and ensure that there's no syntax errors or repeated decimal points.
+
+#### 4. Weird microROS agent behavior after updating the Linux/ROS
+- Don't forget to update the microROS agent as well after your updates. Just run:
+    
+    ```
+    bash update_microros.bash
+    ```
 
 ## Useful Resources:
 

@@ -1,7 +1,20 @@
 <?xml version="1.0"?>
 <robot name="linorobot2_2wd" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:property name="base_length" value="0.25" />
+  <xacro:property name="base_width" value="0.25" />
+  <xacro:property name="base_height" value="0.003" />
+  <xacro:property name="base_mass" value="1" />
 
-  <xacro:include filename="$(find linorobot2_description)/urdf/2wd_properties.urdf.xacro" />
+  <xacro:property name="wheel_radius" value="0.045" />
+  <xacro:property name="wheel_width" value="0.01" />
+  <xacro:property name="wheel_pos_x" value="0.08" />
+  <xacro:property name="wheel_pos_y" value="0.12" />
+  <xacro:property name="wheel_pos_z" value="-0.045" />
+  <xacro:property name="wheel_mass" value=".1" />
+  <xacro:property name="wheel_torque" value="20" />
+  <xacro:property name="front_caster_wheel" value="false" />
+  <xacro:property name="rear_caster_wheel" value="true" />
+
   <xacro:include filename="$(find linorobot2_description)/urdf/mech/base.urdf.xacro" />
   <xacro:include filename="$(find linorobot2_description)/urdf/mech/wheel.urdf.xacro" />
   <xacro:include filename="$(find linorobot2_description)/urdf/mech/caster_wheel.urdf.xacro" />
@@ -10,6 +23,18 @@
   <xacro:include filename="$(find linorobot2_description)/urdf/sensors/depth_sensor.urdf.xacro" />
   <xacro:include filename="$(find linorobot2_description)/urdf/controllers/diff_drive.urdf.xacro" />
 
+  <xacro:property name="laser_pose">
+    <origin xyz="0.0 0 0.325" rpy="-3.1416 0 0"/>
+  </xacro:property>
+
+  <xacro:property name="base_laser_pose">
+    <origin xyz="0.08 0 -0.05" rpy="-3.1416 0 0"/>
+  </xacro:property>
+
+  <xacro:property name="depth_sensor_pose">
+    <origin xyz="0.14 0.0 0.23" rpy="0 0 0"/>
+  </xacro:property>
+
   <xacro:base 
     length="${base_length}" 
     width="${base_width}" 
@@ -17,7 +42,7 @@
     mass="${base_mass}"
     wheel_radius="${wheel_radius}"
     wheel_pos_z="${wheel_pos_z}"
-/>
+  />
 
   <xacro:wheel 
     side="left"
@@ -65,6 +90,10 @@
     <xacro:insert_block name="laser_pose" />
   </xacro:generic_laser>
   
+  <xacro:generic_base_laser>
+    <xacro:insert_block name="base_laser_pose" />
+  </xacro:generic_base_laser>
+
   <xacro:depth_sensor>
     <xacro:insert_block name="depth_sensor_pose" />
   </xacro:depth_sensor>

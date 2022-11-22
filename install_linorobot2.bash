@@ -15,7 +15,7 @@
 
 set -e
 
-ROSDISTRO="$(rosversion -d)"
+ROSDISTRO="$(printenv ROS_DISTRO)"
 BASE=$1
 LASER_SENSOR=$2
 DEPTH_SENSOR=$3
@@ -24,8 +24,18 @@ WORKSPACE="$HOME/linorobot2_ws"
 
 ROBOT_TYPE_ARRAY=(2wd 4wd mecanum)
 DEPTH_SENSOR_ARRAY=(realsense zed zedm zed2 zed2i)
-LASER_SENSOR_ARRAY=(rplidar ldlidar ydlidar)
+LASER_SENSOR_ARRAY=(rplidar ldlidar ydlidar xv11)
 LASER_SENSOR_ARRAY+=(${DEPTH_SENSOR_ARRAY[@]})
+
+if [ -z "$LASER_SENSOR" ]
+    then
+        LASER_SENSOR=""
+fi
+
+if [ -z "$DEPTH_SENSOR" ]
+    then
+        DEPTH_SENSOR=""
+fi
 
 function install_cuda_jetson {
     wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/sbsa/cuda-ubuntu2004.pin
@@ -39,6 +49,13 @@ function install_cuda_jetson {
     #  /tmp/apt-dpkg-install-TvUCLd/14-libnvidia-compute-470_470.57.02-0ubuntu1_arm64.deb
     #  /tmp/apt-dpkg-install-TvUCLd/18-libnvidia-gl-470_470.57.02-0ubuntu1_arm64.deb
     # E: Sub-process /usr/bin/dpkg returned an error code (1)
+}
+
+function install_xv11 {
+    cd $WORKSPACE
+    git clone https://github.com/mjstn/xv_11_driver src/xv_11_driver
+    colcon build
+    source $WORKSPACE/install/setup.bash
 }
 
 function install_rplidar {
@@ -59,6 +76,7 @@ function install_ldlidar {
 function install_ydlidar {
     cd /tmp
     git clone https://github.com/YDLIDAR/YDLidar-SDK.git
+    mkdir YDLidar-SDK/build
     cd YDLidar-SDK/build
     cmake ..
     make
@@ -66,13 +84,18 @@ function install_ydlidar {
     cd $WORKSPACE
     git clone https://github.com/YDLIDAR/ydlidar_ros2_driver src/ydlidar_ros2_driver
     chmod 0777 src/ydlidar_ros2_driver/startup/*
-    sudo sh src/ydlidar_ros2_driver/startup/initenv.sh
+    sudo echo  'KERNEL=="ttyUSB*", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", MODE:="0666", GROUP:="dialout",  SYMLINK+="ydlidar"' >/etc/udev/rules.d/ydlidar.rules
+    sudo echo  'KERNEL=="ttyACM*", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", MODE:="0666", GROUP:="dialout",  SYMLINK+="ydlidar"' >/etc/udev/rules.d/ydlidar-V2.rules
+    sudo echo  'KERNEL=="ttyUSB*", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", MODE:="0666", GROUP:="dialout",  SYMLINK+="ydlidar"' >/etc/udev/rules.d/ydlidar-2303.rules
     colcon build --symlink-install
     source $WORKSPACE/install/setup.bash
 }
 
 function install_realsense {
     sudo apt install -y ros-$ROS_DISTRO-realsense2-camera
+    cd /tmp
+    wget https://raw.githubusercontent.com/IntelRealSense/librealsense/master/config/99-realsense-libusb.rules
+    sudo cp 99-realsense-libusb.rules /etc/udev/rules.d
 }
 
 function install_astra {
@@ -103,7 +126,7 @@ function install_zed {
     cd $WORKSPACE
     
     git clone https://github.com/stereolabs/zed-ros2-wrapper src/zed-ros2-wrapper
-    git clone https://github.com/ros-perception/image_common.git -b ros2 src/image_common #https://github.com/stereolabs/zed-ros2-wrapper#image-transport-and-topic-subscriptions
+    git clone https://github.com/ros-perception/image_common -b $ROS_DISTRO src/image_common #https://github.com/stereolabs/zed-ros2-wrapper#image-transport-and-topic-subscriptions
     rosdep install --from-paths src --ignore-src -r -y
     colcon build --symlink-install --cmake-args=-DCMAKE_BUILD_TYPE=Release
     # colcon build --symlink-install --cmake-args=-DCMAKE_BUILD_TYPE=Release --cmake-args=-DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-11.4
@@ -240,7 +263,7 @@ source $WORKSPACE/install/setup.bash
 
 #### 2.1 Download linorobot2:
 cd $WORKSPACE
-git clone https://github.com/linorobot/linorobot2 src/linorobot2
+git clone -b $ROS_DISTRO https://github.com/linorobot/linorobot2 src/linorobot2
 
 #### 2.2 Ignore Gazebo Packages on robot computer (optional)
 cd $WORKSPACE/src/linorobot2/linorobot2_gazebo
